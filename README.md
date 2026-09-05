@@ -10,6 +10,15 @@
   <img src="docs/app-home.png" width="800" alt="DeepSeek Harness 主窗口">
 </p>
 
+## 特点
+
+- **轻量原生**：纯 AppKit + WKWebView 实现，安装包不到 1 MB，没有 Electron 之类的运行时包袱。
+- **是一个真正的 Mac 应用**：放入“应用程序”后即可用 Spotlight、Dock 和 ⌘Tab 启动切换，配备标准菜单栏和快捷键——⌘N 新对话、⇧⌘R 重启 Server、⌥⌘L 打开 Console。
+- **窗口即点即开**：启动画面带真实进度（获取、安装依赖、构建各阶段都有百分比）；日常启动直接复用已构建的 DSH，不重复安装。
+- **与 macOS 融为一体的外观**：透明标题栏加全高度内容视图，DSH 界面一直延伸到红绿灯按钮之下，看起来就是一块完整的原生窗口。
+- **托管 DSH 完整生命周期**：自动克隆、跟踪最新 RC、构建并启动本地服务；退出时连同全部子进程干净停止，遗留的 Server 会在下次启动时安全清理。
+- **更新可控、日志透明**：后台发现新版 DSH 时只提示，确认后才重启切换；完整运行输出随时可在 DSH Console 查看（URL 中的认证 token 自动脱敏）。
+
 ## 下载与首次打开
 
 GitHub Releases 提供自动构建的 Universal macOS ZIP，同时支持 Apple Silicon 和 Intel Mac。
