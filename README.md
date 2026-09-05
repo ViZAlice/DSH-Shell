@@ -1,13 +1,21 @@
 # DSH Shell
 
-一个非官方的 macOS 原生薄壳：在本机准备并启动
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)，再通过 AppKit + WKWebView
-显示它的 Web UI。构建产物在 macOS 中显示为 **DeepSeek Harness.app**。
+为 DeepSeek Harness 提供一个 macOS 原生 App 薄壳：通过 AppKit + WKWebView 显示
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的 Web UI。
+构建产物在 macOS 中显示为 **DeepSeek Harness.app**。享受原生 App 的体验：
 
-> 本项目不是 DeepSeek 官方产品，也未获得 DeepSeek 的认可或背书。
+- 从“应用程序”或聚焦（Spotlight）启动
+- 符合直觉的 macOS 快捷键
+
+> 本项目不是 DeepSeek 官方产品。
+
 
 <p align="center">
   <img src="docs/app-home.png" width="800" alt="DeepSeek Harness 主窗口">
+</p>
+
+<p align="center">
+  <img src="docs/spotlight.png" width="640" alt="通过 Spotlight 启动 DeepSeek Harness">
 </p>
 
 ## 特点
@@ -17,8 +25,7 @@
 - **窗口即点即开**：启动画面带真实进度（获取、安装依赖、构建各阶段都有百分比）；日常启动直接复用已构建的 DSH，不重复安装。
 - **与 macOS 融为一体的外观**：透明标题栏加全高度内容视图，DSH 界面一直延伸到红绿灯按钮之下，看起来就是一块完整的原生窗口。适配通过运行时注入的少量 CSS 与脚本完成，不修改 DSH 的任何源码。
 - **托管 DSH 完整生命周期**：自动克隆、跟踪最新 RC、构建并启动本地服务；退出时连同全部子进程干净停止，遗留的 Server 会在下次启动时安全清理。
-- **直连官方 Git 仓库，紧跟上游**：DSH 不打包进 App，而是在本机维护一份从官方仓库拉取的 Git 克隆，按版本 tag 跟踪——上游发布新 RC 后 App 直接跟进，无需壳重新发版。想用自己魔改的 DSH，把这份克隆换成你的仓库即可（见[替换 DSH 仓库](#替换为自己的-dsh-仓库)）。
-- **更新可控、日志透明**：后台发现新版 DSH 时只提示，确认后才重启切换；完整运行输出随时可在 DSH Console 查看（URL 中的认证 token 自动脱敏）。
+- **直连官方 Git 仓库**：DSH 不打包进 App，而是在本机维护一份从官方仓库拉取的 Git 克隆，按版本 tag 跟踪——上游发布新 RC 后 App 直接跟进，无需重打包DSH Shell。若想用自己魔改的 DSH ，把这份克隆换成你的仓库即可（见[替换 DSH 仓库](#替换为自己的-dsh-仓库)）。
 
 ## 下载与首次打开
 
@@ -31,21 +38,16 @@ GitHub Releases 提供自动构建的 Universal macOS ZIP，同时支持 Apple S
 
 只有在你信任本仓库及对应 Release 时才应手动放行。受组织管理的 Mac 可能不允许绕过该限制。
 
-放行之后，即可通过 Spotlight 搜索 "DeepSeek Harness" 启动：
-
-<p align="center">
-  <img src="docs/spotlight.png" width="640" alt="通过 Spotlight 启动 DeepSeek Harness">
-</p>
 
 ## 运行要求
 
 - macOS 14 或更高版本
-- Git
-- Node.js `^22.19.0` 或 `>=24.0.0`
-- pnpm，建议使用 DSH 当前声明的 `11.7.0`
-- 首次安装依赖及获取更新时能访问 GitHub 和 npm registry
+- Git：一般已随 Xcode 或“命令行开发者工具”安装。全新 Mac 首次用到 git 时，系统通常会弹窗引导安装（需联网下载）；也可提前执行 `xcode-select --install`
+- Node.js `^22.19.0` 或 `>=24.0.0`：需自行安装（nodejs.org、Homebrew 等），App 不会代为安装
+- pnpm：需自行安装且位于 PATH 中，推荐启用 Node 自带的 Corepack（`corepack enable`），建议使用 DSH 当前声明的 `11.7.0`
+- 首次准备与后续更新需要能访问 GitHub 和 npm registry。App 自动完成的是克隆 DSH 源码、安装其 npm 依赖并构建；网络不佳时首次启动会明显变慢甚至失败，依赖就绪后的日常启动只保留一次轻量的版本检查
 
-DSH、Node 和 pnpm 均不打包进 App。缺少上述命令时，启动准备会失败。
+DSH、Node 和 pnpm 均不打包进 App。Git、Node 或 pnpm 缺失时启动准备会失败，完整原因可在 DSH Console 中查看。
 
 ## 工作方式
 
@@ -85,18 +87,6 @@ xcodebuild -project DSHShell.xcodeproj \
   -destination 'platform=macOS' \
   build
 ```
-
-## 自动发布
-
-推送形如 `v1.0.0` 的 tag 会触发 GitHub Actions：
-
-- 构建 arm64 + x86_64 Universal Release；
-- 对 App 进行 ad-hoc 签名并验证签名和架构；
-- 使用 `ditto` 创建保留 macOS Bundle 元数据的 ZIP；
-- 生成 SHA-256 文件；
-- 创建 GitHub Release 并上传两份文件。
-
-该流程不需要 Apple 证书或仓库 Secrets。普通 push 和 pull request 会执行一次无签名 Debug 构建。
 
 ## 安全与版本说明
 
