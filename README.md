@@ -6,6 +6,10 @@
 
 > 本项目不是 DeepSeek 官方产品，也未获得 DeepSeek 的认可或背书。
 
+<p align="center">
+  <img src="docs/app-home.png" width="800" alt="DeepSeek Harness 主窗口">
+</p>
+
 ## 下载与首次打开
 
 GitHub Releases 提供自动构建的 Universal macOS ZIP，同时支持 Apple Silicon 和 Intel Mac。
@@ -16,6 +20,12 @@ GitHub Releases 提供自动构建的 Universal macOS ZIP，同时支持 Apple S
 3. 打开“系统设置 → 隐私与安全性”，在安全性区域选择“仍要打开”，然后确认。
 
 只有在你信任本仓库及对应 Release 时才应手动放行。受组织管理的 Mac 可能不允许绕过该限制。
+
+放行之后，即可通过 Spotlight 搜索 "DeepSeek Harness" 启动：
+
+<p align="center">
+  <img src="docs/spotlight.png" width="640" alt="通过 Spotlight 启动 DeepSeek Harness">
+</p>
 
 ## 运行要求
 
