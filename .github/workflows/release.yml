@@ -1,0 +1,91 @@
+name: Release unsigned macOS app
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build Universal Release app
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          xcodebuild \
+            -project DSHShell.xcodeproj \
+            -scheme DSHShell \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            ARCHS='arm64 x86_64' \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            MARKETING_VERSION="$version" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            build
+
+      - name: Ad-hoc sign and verify app
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/DerivedData/Build/Products/Release/DeepSeek Harness.app"
+          test -d "$app"
+          codesign --force --sign - --options runtime --timestamp=none "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          archs="$(lipo -archs "$app/Contents/MacOS/DeepSeek Harness")"
+          [[ " $archs " == *' arm64 '* ]]
+          [[ " $archs " == *' x86_64 '* ]]
+
+      - name: Package app and checksum
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          app="$RUNNER_TEMP/DerivedData/Build/Products/Release/DeepSeek Harness.app"
+          output="$RUNNER_TEMP/release"
+          archive="DeepSeek-Harness-${version}-macOS-universal-unsigned.zip"
+          mkdir -p "$output"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$output/$archive"
+          (
+            cd "$output"
+            shasum -a 256 "$archive" > "$archive.sha256"
+          )
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeepSeek-Harness-${{ github.ref_name }}-macOS-universal-unsigned
+          path: |
+            ${{ runner.temp }}/release/*.zip
+            ${{ runner.temp }}/release/*.sha256
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          notes="$RUNNER_TEMP/release-notes.md"
+          cat > "$notes" <<'EOF'
+          Unofficial macOS wrapper for DeepSeek Harness.
+
+          This build is ad-hoc signed but is not Developer ID signed or Apple-notarized. On first launch, macOS may require System Settings → Privacy & Security → Open Anyway.
+
+          Runtime requirements: macOS 14+, Git, Node.js ^22.19.0 or >=24.0.0, and pnpm 11.7.0.
+          EOF
+          gh release create "$RELEASE_TAG" \
+            "$RUNNER_TEMP"/release/*.zip \
+            "$RUNNER_TEMP"/release/*.sha256 \
+            --title "DeepSeek Harness $RELEASE_TAG" \
+            --notes-file "$notes"
